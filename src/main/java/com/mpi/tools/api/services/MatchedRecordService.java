@@ -48,7 +48,8 @@ public class MatchedRecordService {
 			if (nextPage.getRelation().equals("next")) {
 				if (!nextPage.getUrl().isEmpty()) {
 					// "http://160.242.33.26:58383/fhir?_getpages=9ff48d9c-a6d4-4700-b8f7-72c6a58079de&_getpagesoffset=100&_count=100&_pretty=true&_bundletype=searchset"
-					String nextURI = nextPage.getUrl().split("58383")[1];
+					logger.info("uri link" + nextPage.getUrl());
+					String nextURI = nextPage.getUrl().split("getpages=")[1].toString();
 					logger.info("uri link" + nextURI);
 
 					try {

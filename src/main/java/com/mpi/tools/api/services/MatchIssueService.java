@@ -9,11 +9,18 @@ import com.mpi.tools.api.repository.MatchIssueRepository;
 @Service
 public class MatchIssueService {
 	@Autowired
-	private MatchIssueRepository matchIssueRepository; 
-	
-	public MatchIssue save(MatchIssue record){
-		MatchIssue savedRecord = matchIssueRepository.saveAndFlush(record);
-	 	
-		return savedRecord;
+	private MatchIssueRepository matchIssueRepository;
+
+	public MatchIssue save(MatchIssue record) {
+
+		MatchIssue savedRecord = this.matchIssueRepository.findByOpenCrCruid(record.getOpenCrCruid());
+
+		if (savedRecord == null) {
+			matchIssueRepository.saveAndFlush(record);
+		}else {
+			matchIssueRepository.save(record);
+		}
+
+		return record;
 	}
 }

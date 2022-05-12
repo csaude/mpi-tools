@@ -16,11 +16,8 @@ public class MatchIssueService {
 		MatchIssue savedRecord = this.matchIssueRepository.findByOpenCrCruid(record.getOpenCrCruid());
 
 		if (savedRecord == null) {
-			matchIssueRepository.saveAndFlush(record);
-		}else {
-			matchIssueRepository.save(record);
+			savedRecord = matchIssueRepository.saveAndFlush(record);
 		}
-
-		return record;
+		return savedRecord;
 	}
 }

@@ -76,41 +76,41 @@ public class MatchedRecordService {
 		matchIssue.setDateCreated(new Date());
 
 		// Sett Main match
-		MatchedRecord mainMatchedRecord = new MatchedRecord();
-		mainMatchedRecord.setBirthDate(patient.getResource().getBirthDate());
-		mainMatchedRecord.setOpencr_cruid(patient.getResource().getId());
-		mainMatchedRecord.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
-		mainMatchedRecord.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
-		mainMatchedRecord.setDateCreated(new Date());
-		mainMatchedRecord.setGender(patient.getResource().getGender());
+		//MatchedRecord mainMatchedRecord = new MatchedRecord();
+		matchIssue.setBirthDate(patient.getResource().getBirthDate());
+		matchIssue.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
+		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
+		matchIssue.setDateCreated(new Date());
+		matchIssue.setGender(patient.getResource().getGender());
 
 		if (!patient.getResource().getName().isEmpty()) {
 			if (!patient.getResource().getName().get(0).getGiven().isEmpty()) {
-				mainMatchedRecord.setGivenName(patient.getResource().getName().get(0).getGiven().get(0));
+				matchIssue.setGivenName(patient.getResource().getName().get(0).getGiven().get(0));
 			}
 
-			mainMatchedRecord.setFamilyName(patient.getResource().getName().get(0).getFamily());
+			matchIssue.setFamilyName(patient.getResource().getName().get(0).getFamily());
 
 		}
-		mainMatchedRecord.setMatchIssue(matchIssue);
 
-		matchIssue.addMatcheRecords(mainMatchedRecord);
-		
-		//Set main Match
-
-		// sett Matched
-		for (PatientMatchDTO matched : patient.getResource().getLink()) {
-			if (matched.getOther() != null) {
-
-				logger.info("Matched Patient link - " + matched.getOther().getReference());
-				PatientMatchedDTO matchedPatient = this.findPatientMatched(matched.getOther().getReference());
-
-				MatchedRecord matchedRecord = this.createMatchRecord(matchedPatient);
-				matchedRecord.setMatchIssue(matchIssue);
-
-				matchIssue.addMatcheRecords(matchedRecord);
-			}
-		}
+		/*
+		 * // mainMatchedRecord.setMatchIssue(matchIssue);
+		 * 
+		 * // matchIssue.addMatcheRecords(mainMatchedRecord);
+		 * 
+		 * // Set main Match
+		 * 
+		 * // sett Matched for (PatientMatchDTO matched :
+		 * patient.getResource().getLink()) { if (matched.getOther() != null) {
+		 * 
+		 * logger.info("Matched Patient link - " + matched.getOther().getReference());
+		 * PatientMatchedDTO matchedPatient =
+		 * this.findPatientMatched(matched.getOther().getReference());
+		 * 
+		 * MatchedRecord matchedRecord = this.createMatchRecord(matchedPatient);
+		 * matchedRecord.setMatchIssue(matchIssue);
+		 * 
+		 * matchIssue.addMatcheRecords(matchedRecord); } }
+		 */
 
 		this.matchIssueService.save(matchIssue);
 
@@ -156,7 +156,7 @@ public class MatchedRecordService {
 
 			for (CodeDTO code : identifier.getType().getCoding()) {
 				if (code.getCode().equals(UUID_CODE)) {
-					logger.info("coder --- " + code.getCode() + " - "  + identifier.getValue());
+					logger.info("coder --- " + code.getCode() + " - " + identifier.getValue());
 					return identifier.getValue();
 				}
 			}

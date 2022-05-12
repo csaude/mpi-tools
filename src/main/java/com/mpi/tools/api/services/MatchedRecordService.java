@@ -44,26 +44,13 @@ public class MatchedRecordService {
 
 	private final String FEMALE = "female";
 
-	private final String MALE_CONVERTED = "Masculino";
+	private final String MALE_CONVERTED = "M";
 
-	private final String FEMALE_CONVERTED = "Femenino";
+	private final String FEMALE_CONVERTED = "F";
 
 	public final Log logger = LogFactory.getLog(getClass());
 
 	public String SaveMatchedInfo(MatchedDTO matchList) {
-
-		// verificar a ultima pagina corrida
-		List<MatchConfig> config = this.matchConfig.findMatchConfig(MATCH);
-
-		if (config != null && !config.isEmpty()) {
-			String nextURI = config.get(config.size() - 1).getLastPage().split("getpages=")[1].toString();
-			MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
-			this.deleteMatchConfig();
-
-			this.SaveMatchedInfo(nextPageMatch);
-			logger.info("Match Found");
-
-		}
 
 		for (PatientDTO patient : matchList.getEntry()) {
 			this.createMatchedIssue(patient);
@@ -80,7 +67,7 @@ public class MatchedRecordService {
 						MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
 						this.SaveMatchedInfo(nextPageMatch);
 					} catch (FeignClientException e) {
-						this.saveNextPage(nextPage.getUrl());
+						//this.saveNextPage(nextPage.getUrl());
 						e.printStackTrace();
 					}
 

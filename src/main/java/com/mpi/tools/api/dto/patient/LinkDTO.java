@@ -2,7 +2,7 @@ package com.mpi.tools.api.dto.patient;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@JsonIgnoreProperties(value = {"other","type"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class LinkDTO {
 
 	private String relation;

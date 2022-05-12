@@ -6,10 +6,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(value = { "meta", "type","text" })
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MatchedDTO {
 
-    @JsonProperty("entry")
+	@JsonProperty("entry")
 	private List<PatientDTO> entry = new ArrayList<PatientDTO>();
 
 	private String id;

@@ -6,8 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(value = { "lastUpdate", "source", "meta", "text", "address", "deceasedDateTime", "telecom",
-		"extension", "contact", "type", "subtype", "action", "recorded", "outcome" ,"outcomeDesc", "agent", "entity"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ResourceDTO {
 
 	private String id;

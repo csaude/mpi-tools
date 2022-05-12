@@ -3,6 +3,12 @@ create table mpi_match_issue (	id bigint(20) NOT NULL AUTO_INCREMENT,
 								opencr_cruid varchar(36) NOT NULL,
 								opencr_uuid varchar(255) NOT NULL,
 								UNIQUE KEY `unq_match_issue_opencr_cruid` (`opencr_cruid`),
+								given_name varchar(250) NULL,
+								family_name varchar(250) NULL,
+								tarv_nid  varchar(250) NULL,
+								gender varchar(15) NOT NULL,
+								birth_date varchar(20),
+								transfered_to int(1),
 								PRIMARY KEY (id)
 							) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -75,6 +75,29 @@ public class MatchedRecordService {
 		matchIssue.setOpenCrCruid(patient.getResource().getId());
 		matchIssue.setDateCreated(new Date());
 
+		// Sett Main match
+		MatchedRecord mainMatchedRecord = new MatchedRecord();
+		mainMatchedRecord.setBirthDate(patient.getResource().getBirthDate());
+		mainMatchedRecord.setOpencr_cruid(patient.getResource().getId());
+		mainMatchedRecord.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
+		mainMatchedRecord.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
+		mainMatchedRecord.setDateCreated(new Date());
+		mainMatchedRecord.setGender(patient.getResource().getGender());
+
+		if (!patient.getResource().getName().isEmpty()) {
+			if (!patient.getResource().getName().get(0).getGiven().isEmpty()) {
+				mainMatchedRecord.setGivenName(patient.getResource().getName().get(0).getGiven().get(0));
+			}
+
+			mainMatchedRecord.setFamilyName(patient.getResource().getName().get(0).getFamily());
+
+		}
+		mainMatchedRecord.setMatchIssue(matchIssue);
+
+		matchIssue.addMatcheRecords(mainMatchedRecord);
+		
+		//Set main Match
+
 		// sett Matched
 		for (PatientMatchDTO matched : patient.getResource().getLink()) {
 			if (matched.getOther() != null) {
@@ -133,6 +156,7 @@ public class MatchedRecordService {
 
 			for (CodeDTO code : identifier.getType().getCoding()) {
 				if (code.getCode().equals(UUID_CODE)) {
+					logger.info("coder --- " + code.getCode() + " - "  + identifier.getValue());
 					return identifier.getValue();
 				}
 			}

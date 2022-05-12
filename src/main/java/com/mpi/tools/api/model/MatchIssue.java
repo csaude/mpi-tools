@@ -33,7 +33,14 @@ public class MatchIssue {
 	@Column(name = "date_created", updatable = false)
 	private Date dateCreated;
 
-	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+	private String givenName;
+	private String familyName;
+	private String tarvNid;
+	private String gender;
+	private String birthDate;
+	private Boolean transferedTo;
+
+	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<MatchedRecord> matchedRecords = new ArrayList<>();
 
 	public void addMatcheRecords(MatchedRecord matched) {
@@ -78,6 +85,54 @@ public class MatchIssue {
 
 	public void setOpenCrCruid(String openCrCruid) {
 		this.openCrCruid = openCrCruid;
+	}
+
+	public String getGivenName() {
+		return givenName;
+	}
+
+	public void setGivenName(String givenName) {
+		this.givenName = givenName;
+	}
+
+	public String getFamilyName() {
+		return familyName;
+	}
+
+	public void setFamilyName(String familyName) {
+		this.familyName = familyName;
+	}
+
+	public String getTarvNid() {
+		return tarvNid;
+	}
+
+	public void setTarvNid(String tarvNid) {
+		this.tarvNid = tarvNid;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getBirthDate() {
+		return birthDate;
+	}
+
+	public void setBirthDate(String birthDate) {
+		this.birthDate = birthDate;
+	}
+
+	public Boolean getTransferedTo() {
+		return transferedTo;
+	}
+
+	public void setTransferedTo(Boolean transferedTo) {
+		this.transferedTo = transferedTo;
 	}
 
 }

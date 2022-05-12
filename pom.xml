@@ -110,7 +110,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>edu.mills.cs180a.BookRepositoryImplFeign</mainClass>
+							<mainClass>com.mpi.tools.MpiToolsApiApplication</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

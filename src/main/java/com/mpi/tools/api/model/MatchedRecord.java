@@ -32,7 +32,7 @@ public class MatchedRecord {
 	private String openmrsUuid;
 
 	@JoinColumn(name = "match_issue_id")
-	@ManyToOne(targetEntity = MatchIssue.class, cascade = CascadeType.ALL, fetch = FetchType.LAZY,optional = false)
+	@ManyToOne(targetEntity = MatchIssue.class, cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
 	private MatchIssue matchIssue;
 
 	private String givenName;
@@ -40,7 +40,6 @@ public class MatchedRecord {
 	private String tarvNid;
 	private String gender;
 	private String birthDate;
-	private Boolean transferedTo;
 
 	public Long getId() {
 		return id;
@@ -112,14 +111,6 @@ public class MatchedRecord {
 
 	public void setBirthDate(String birthDate) {
 		this.birthDate = birthDate;
-	}
-
-	public Boolean getTransferedTo() {
-		return transferedTo;
-	}
-
-	public void setTransferedTo(Boolean transferedTo) {
-		this.transferedTo = transferedTo;
 	}
 
 	public String getOpenmrsUuid() {

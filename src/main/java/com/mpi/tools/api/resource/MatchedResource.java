@@ -29,7 +29,7 @@ public class MatchedResource {
 		this.matchedRecordService.SaveMatchedInfo(matches);
 
 		// Teste
-		return matches != null ? ResponseEntity.ok(matches) : ResponseEntity.noContent().build();
+		return matches != null ? ResponseEntity.ok("Patient Match created") : ResponseEntity.noContent().build();
 
 	}
 

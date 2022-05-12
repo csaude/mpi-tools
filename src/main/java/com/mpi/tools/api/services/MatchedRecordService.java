@@ -14,8 +14,8 @@ import com.mpi.tools.api.dto.patient.IdentifierDTO;
 import com.mpi.tools.api.dto.patient.LinkDTO;
 import com.mpi.tools.api.dto.patient.MatchedDTO;
 import com.mpi.tools.api.dto.patient.PatientDTO;
-import com.mpi.tools.api.dto.patient.PatientMatchDTO;
 import com.mpi.tools.api.dto.patient.ResourceDTO;
+import com.mpi.tools.api.model.MatchConfig;
 import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.model.MatchedRecord;
 import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
@@ -29,15 +29,41 @@ public class MatchedRecordService {
 	private MatchIssueService matchIssueService;
 
 	@Autowired
+	private MatchConfigService matchConfig;
+
+	@Autowired
 	private MatchedPatientFeignClient matchedPatientFeignClient;
 
 	private final String UUID_CODE = "OpenMRS_PATIENT_UUID";
 
 	private final String NID_CODE = "NID_TARV";
 
+	private final String MATCH = "MATCH";
+
+	private final String MALE = "male";
+
+	private final String FEMALE = "female";
+
+	private final String MALE_CONVERTED = "Masculino";
+
+	private final String FEMALE_CONVERTED = "Femenino";
+
 	public final Log logger = LogFactory.getLog(getClass());
 
 	public String SaveMatchedInfo(MatchedDTO matchList) {
+
+		// verificar a ultima pagina corrida
+		List<MatchConfig> config = this.matchConfig.findMatchConfig(MATCH);
+
+		if (config != null && !config.isEmpty()) {
+			String nextURI = config.get(config.size() - 1).getLastPage().split("getpages=")[1].toString();
+			MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
+			this.deleteMatchConfig();
+
+			this.SaveMatchedInfo(nextPageMatch);
+			logger.info("Match Found");
+
+		}
 
 		for (PatientDTO patient : matchList.getEntry()) {
 			this.createMatchedIssue(patient);
@@ -47,16 +73,14 @@ public class MatchedRecordService {
 		for (LinkDTO nextPage : matchList.getLink()) {
 			if (nextPage.getRelation().equals("next")) {
 				if (!nextPage.getUrl().isEmpty()) {
-					// "http://160.242.33.26:58383/fhir?_getpages=9ff48d9c-a6d4-4700-b8f7-72c6a58079de&_getpagesoffset=100&_count=100&_pretty=true&_bundletype=searchset"
-					logger.info("uri link" + nextPage.getUrl());
 					String nextURI = nextPage.getUrl().split("getpages=")[1].toString();
-					logger.info("uri link" + nextURI);
 
 					try {
 						// Resolver o bug
 						MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
 						this.SaveMatchedInfo(nextPageMatch);
 					} catch (FeignClientException e) {
+						this.saveNextPage(nextPage.getUrl());
 						e.printStackTrace();
 					}
 
@@ -67,8 +91,28 @@ public class MatchedRecordService {
 		return "done";
 	}
 
+	private void deleteMatchConfig() {
+
+		this.matchConfig.deleteMatchConfig();
+	}
+
+	private void saveNextPage(String lastPage) {
+
+		MatchConfig config = new MatchConfig();
+
+		config.setType(MATCH);
+		config.setActive(Boolean.TRUE);
+		config.setLastPage(lastPage);
+		config.setDateCreated(new Date());
+
+		this.matchConfig.createMatchConfig(config);
+
+	}
+
 	// Formar os objectos
 	private void createMatchedIssue(PatientDTO patient) {
+
+		// Antes de process
 
 		MatchIssue matchIssue = new MatchIssue();
 		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
@@ -76,12 +120,12 @@ public class MatchedRecordService {
 		matchIssue.setDateCreated(new Date());
 
 		// Sett Main match
-		//MatchedRecord mainMatchedRecord = new MatchedRecord();
+		// MatchedRecord mainMatchedRecord = new MatchedRecord();
 		matchIssue.setBirthDate(patient.getResource().getBirthDate());
 		matchIssue.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
 		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setDateCreated(new Date());
-		matchIssue.setGender(patient.getResource().getGender());
+		matchIssue.setGender(this.convertGender(patient.getResource().getGender()));
 
 		if (!patient.getResource().getName().isEmpty()) {
 			if (!patient.getResource().getName().get(0).getGiven().isEmpty()) {
@@ -114,6 +158,18 @@ public class MatchedRecordService {
 
 		this.matchIssueService.save(matchIssue);
 
+	}
+
+	private String convertGender(String gender) {
+
+		if (gender != null && gender.equals(FEMALE)) {
+
+			return FEMALE_CONVERTED;
+		} else if (gender != null && gender.equals(MALE)) {
+
+			return MALE_CONVERTED;
+		}
+		return null;
 	}
 
 	private MatchedRecord createMatchRecord(PatientMatchedDTO matchedPatient) {

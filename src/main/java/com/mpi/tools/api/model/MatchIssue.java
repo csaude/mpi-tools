@@ -38,7 +38,6 @@ public class MatchIssue {
 	private String tarvNid;
 	private String gender;
 	private String birthDate;
-	private Boolean transferedTo;
 
 	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<MatchedRecord> matchedRecords = new ArrayList<>();
@@ -125,14 +124,6 @@ public class MatchIssue {
 
 	public void setBirthDate(String birthDate) {
 		this.birthDate = birthDate;
-	}
-
-	public Boolean getTransferedTo() {
-		return transferedTo;
-	}
-
-	public void setTransferedTo(Boolean transferedTo) {
-		this.transferedTo = transferedTo;
 	}
 
 }

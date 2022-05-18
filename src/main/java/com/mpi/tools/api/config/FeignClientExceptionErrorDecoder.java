@@ -31,8 +31,8 @@ public class FeignClientExceptionErrorDecoder implements ErrorDecoder {
 				LOGGER.error(methodKey + "Error Deserializing response body from failed feign request response.", e);
 			}
 		}
-		
+
 		LOGGER.info("REQUEST FROM CLIENTT " + response.request());
-		return new FeignClientException(response.status(), message, response.request(),response.reason().getBytes());
+		return new FeignClientException(response.status(), message, response.request(), response.reason().getBytes());
 	}
 }

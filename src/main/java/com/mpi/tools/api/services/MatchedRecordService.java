@@ -8,16 +8,20 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.mpi.tools.api.dto.matched.MatchIssueDTO;
 import com.mpi.tools.api.dto.matched.PatientMatchedDTO;
+import com.mpi.tools.api.dto.matched.UserDTO;
 import com.mpi.tools.api.dto.patient.CodeDTO;
 import com.mpi.tools.api.dto.patient.IdentifierDTO;
 import com.mpi.tools.api.dto.patient.LinkDTO;
 import com.mpi.tools.api.dto.patient.MatchedDTO;
 import com.mpi.tools.api.dto.patient.PatientDTO;
+import com.mpi.tools.api.dto.patient.PatientMatchDTO;
 import com.mpi.tools.api.dto.patient.ResourceDTO;
 import com.mpi.tools.api.model.MatchConfig;
 import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.model.MatchedRecord;
+import com.mpi.tools.api.resource.interfaces.MatchIssueFeignClient;
 import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
 
 import feign.FeignException.FeignClientException;
@@ -33,6 +37,9 @@ public class MatchedRecordService {
 
 	@Autowired
 	private MatchedPatientFeignClient matchedPatientFeignClient;
+
+	@Autowired
+	private MatchIssueFeignClient matchIssueFeignClient;
 
 	private final String UUID_CODE = "OpenMRS_PATIENT_UUID";
 
@@ -50,10 +57,12 @@ public class MatchedRecordService {
 
 	public final Log logger = LogFactory.getLog(getClass());
 
-	public String SaveMatchedInfo(MatchedDTO matchList) {
+	public String SaveMatchedInfo(MatchedDTO matchList, UserDTO user) {
+
+		logger.info("User LOggado " + user.getUsername());
 
 		for (PatientDTO patient : matchList.getEntry()) {
-			this.createMatchedIssue(patient);
+			this.createMatchedIssue(patient, user);
 		}
 
 		// Chamar o nextPage caso exista de forma recursiva
@@ -65,9 +74,9 @@ public class MatchedRecordService {
 					try {
 						// Resolver o bug
 						MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
-						this.SaveMatchedInfo(nextPageMatch);
+						this.SaveMatchedInfo(nextPageMatch, user);
 					} catch (FeignClientException e) {
-						//this.saveNextPage(nextPage.getUrl());
+						// this.saveNextPage(nextPage.getUrl());
 						e.printStackTrace();
 					}
 
@@ -97,7 +106,7 @@ public class MatchedRecordService {
 	}
 
 	// Formar os objectos
-	private void createMatchedIssue(PatientDTO patient) {
+	private void createMatchedIssue(PatientDTO patient, UserDTO user) {
 
 		// Antes de process
 
@@ -105,7 +114,6 @@ public class MatchedRecordService {
 		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setOpenCrCruid(patient.getResource().getId());
 		matchIssue.setDateCreated(new Date());
-
 		// Sett Main match
 		// MatchedRecord mainMatchedRecord = new MatchedRecord();
 		matchIssue.setBirthDate(patient.getResource().getBirthDate());
@@ -123,28 +131,36 @@ public class MatchedRecordService {
 
 		}
 
-		/*
-		 * // mainMatchedRecord.setMatchIssue(matchIssue);
-		 * 
-		 * // matchIssue.addMatcheRecords(mainMatchedRecord);
-		 * 
-		 * // Set main Match
-		 * 
-		 * // sett Matched for (PatientMatchDTO matched :
-		 * patient.getResource().getLink()) { if (matched.getOther() != null) {
-		 * 
-		 * logger.info("Matched Patient link - " + matched.getOther().getReference());
-		 * PatientMatchedDTO matchedPatient =
-		 * this.findPatientMatched(matched.getOther().getReference());
-		 * 
-		 * MatchedRecord matchedRecord = this.createMatchRecord(matchedPatient);
-		 * matchedRecord.setMatchIssue(matchIssue);
-		 * 
-		 * matchIssue.addMatcheRecords(matchedRecord); } }
-		 */
+		// Set main Match
+
+		// sett Matched Patients
+
+		List<MatchIssueDTO> matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(), user);
+
+		for (MatchIssueDTO matched : matchIssueDTOs) {
+
+			logger.info("Matched Patient link - " + matched.getNid_tarv());
+
+			MatchedRecord matchedRecord = this.createMatchRecord(matched);
+			matchedRecord.setMatchIssue(matchIssue);
+
+			matchIssue.addMatcheRecords(matchedRecord);
+
+		}
 
 		this.matchIssueService.save(matchIssue);
 
+	}
+
+	private List<MatchIssueDTO> getMatchedPatients(String patientId, UserDTO user) {
+
+		List<MatchIssueDTO> matchIssueDTOs;
+
+		logger.info("Patient uuid " + patientId);
+
+		matchIssueDTOs = this.matchIssueFeignClient.getMatchedPatients(patientId, "Basic ".concat(user.getToken()));
+
+		return matchIssueDTOs;
 	}
 
 	private String convertGender(String gender) {
@@ -159,38 +175,22 @@ public class MatchedRecordService {
 		return null;
 	}
 
-	private MatchedRecord createMatchRecord(PatientMatchedDTO matchedPatient) {
+	private MatchedRecord createMatchRecord(MatchIssueDTO matchedPatient) {
 
 		MatchedRecord matchedRecord = new MatchedRecord();
 
-		ResourceDTO patientResourceInfo = this.findPatientResourceDTO(matchedPatient.getEntry());
-		matchedRecord.setBirthDate(patientResourceInfo.getBirthDate());
-		matchedRecord.setOpencr_cruid(patientResourceInfo.getId());
-		matchedRecord.setTarvNid(this.getNID(patientResourceInfo.getIdentifier()));
-		matchedRecord.setOpenmrsUuid(this.getUUID(patientResourceInfo.getIdentifier()));
+		matchedRecord.setBirthDate(matchedPatient.getBirthDate());
+		matchedRecord.setOpencr_cruid(matchedPatient.getId());
+		matchedRecord.setTarvNid(matchedPatient.getNid_tarv());
+		matchedRecord.setOpenmrsUuid(matchedPatient.getUid());
 		matchedRecord.setDateCreated(new Date());
-		matchedRecord.setGender(patientResourceInfo.getGender());
+		matchedRecord.setGender(this.convertGender(matchedPatient.getGender()));
 
-		if (!patientResourceInfo.getName().isEmpty()) {
-			if (!patientResourceInfo.getName().get(0).getGiven().isEmpty()) {
-				matchedRecord.setGivenName(patientResourceInfo.getName().get(0).getGiven().get(0));
-			}
+		matchedRecord.setGivenName(matchedPatient.getGiven());
 
-			matchedRecord.setFamilyName(patientResourceInfo.getName().get(0).getFamily());
-
-		}
+		matchedRecord.setFamilyName(matchedPatient.getFamily());
 
 		return matchedRecord;
-	}
-
-	private ResourceDTO findPatientResourceDTO(List<PatientDTO> entry) {
-
-		for (PatientDTO patientDTO : entry) {
-			if (!patientDTO.getResource().getIdentifier().isEmpty()) {
-				return patientDTO.getResource();
-			}
-		}
-		return null;
 	}
 
 	private String getUUID(List<IdentifierDTO> identifiers) {

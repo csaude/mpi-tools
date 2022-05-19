@@ -32,7 +32,7 @@ public class MatchedRecord {
 	private String openmrsUuid;
 
 	@JoinColumn(name = "match_issue_id")
-	@ManyToOne(targetEntity = MatchIssue.class, cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+	@ManyToOne(targetEntity = MatchIssue.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = false)
 	private MatchIssue matchIssue;
 
 	private String givenName;

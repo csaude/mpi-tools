@@ -1,11 +1,14 @@
 package com.mpi.tools.api.services;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import com.mpi.tools.api.dto.matched.MatchIssueDTO;
@@ -16,8 +19,6 @@ import com.mpi.tools.api.dto.patient.IdentifierDTO;
 import com.mpi.tools.api.dto.patient.LinkDTO;
 import com.mpi.tools.api.dto.patient.MatchedDTO;
 import com.mpi.tools.api.dto.patient.PatientDTO;
-import com.mpi.tools.api.dto.patient.PatientMatchDTO;
-import com.mpi.tools.api.dto.patient.ResourceDTO;
 import com.mpi.tools.api.model.MatchConfig;
 import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.model.MatchedRecord;
@@ -115,12 +116,12 @@ public class MatchedRecordService {
 		matchIssue.setOpenCrCruid(patient.getResource().getId());
 		matchIssue.setDateCreated(new Date());
 		// Sett Main match
-		// MatchedRecord mainMatchedRecord = new MatchedRecord();
 		matchIssue.setBirthDate(patient.getResource().getBirthDate());
 		matchIssue.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
 		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setDateCreated(new Date());
 		matchIssue.setGender(this.convertGender(patient.getResource().getGender()));
+		matchIssue.setProcessed(Boolean.TRUE);
 
 		if (!patient.getResource().getName().isEmpty()) {
 			if (!patient.getResource().getName().get(0).getGiven().isEmpty()) {
@@ -132,15 +133,34 @@ public class MatchedRecordService {
 		}
 
 		// Set main Match
-
 		// sett Matched Patients
+		matchIssue.setBirthDate(patient.getResource().getBirthDate());
 
-		List<MatchIssueDTO> matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(), user);
+		List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+
+		try {
+
+			matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(), user);
+
+		} catch (Exception e) {
+
+			// Create here unplied mathc patients
+			// this.createUnapliedMatch(matchIssue);
+			matchIssue.setProcessed(Boolean.FALSE);
+			logger.info(
+					"Mathced patient with id equal to " + matchIssue.getOpenCrCruid() + " not aplied successfully.");
+			e.printStackTrace();
+
+		}
 
 		for (MatchIssueDTO matched : matchIssueDTOs) {
 
 			logger.info("Matched Patient link - " + matched.getNid_tarv());
+			logger.info("Matched patient id - " + patient.getResource().getId());
 
+			if (this.hasUuid(matchIssue, matched)) {
+				continue;
+			}
 			MatchedRecord matchedRecord = this.createMatchRecord(matched);
 			matchedRecord.setMatchIssue(matchIssue);
 
@@ -152,13 +172,24 @@ public class MatchedRecordService {
 
 	}
 
+	private boolean hasUuid(MatchIssue matchIssue, MatchIssueDTO matched) {
+
+		for (MatchedRecord matchedRecord : matchIssue.getMatchedRecords()) {
+			if (matched.getUid().equals(matchedRecord.getOpenmrsUuid())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private List<MatchIssueDTO> getMatchedPatients(String patientId, UserDTO user) {
 
-		List<MatchIssueDTO> matchIssueDTOs;
+		List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
 
-		logger.info("Patient uuid " + patientId);
+		logger.info("Patient id " + patientId);
 
 		matchIssueDTOs = this.matchIssueFeignClient.getMatchedPatients(patientId, "Basic ".concat(user.getToken()));
+		logger.info("patient matche fetched");
 
 		return matchIssueDTOs;
 	}
@@ -235,5 +266,51 @@ public class MatchedRecordService {
 		MatchedDTO nextMatchedPage = this.matchedPatientFeignClient.getPatientNextPage(nextPageLink);
 
 		return nextMatchedPage;
+	}
+
+	public void saveUnapliedMatchInfo(List<MatchIssue> unapliedMatchInfos, UserDTO user) {
+
+		int count = 0;
+
+		for (MatchIssue unapliedMatchInfo : unapliedMatchInfos) {
+			boolean hasError = Boolean.FALSE;
+			count++;
+			// sett Matched Patients
+			List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+
+			try {
+
+				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid(), user);
+
+			} catch (Exception e) {
+
+				// Create here unplied mathc patients
+				// this.createUnapliedMatch(matchIssue);
+				logger.info("Mathced patient with id equal to " + unapliedMatchInfo.getOpenCrCruid()
+						+ " not aplied successfully.");
+				hasError = Boolean.TRUE;
+				e.printStackTrace();
+
+			}
+
+			for (MatchIssueDTO matched : matchIssueDTOs) {
+
+				logger.info("Matched Patient link - " + matched.getNid_tarv());
+				logger.info("Matched patient id - " + unapliedMatchInfo.getOpenCrCruid());
+
+				MatchedRecord matchedRecord = this.createMatchRecord(matched);
+				matchedRecord.setMatchIssue(unapliedMatchInfo);
+
+				unapliedMatchInfo.addMatcheRecords(matchedRecord);
+
+			}
+
+			if (!hasError) {
+				this.matchIssueService.save(unapliedMatchInfo);
+
+			}
+
+		}
+
 	}
 }

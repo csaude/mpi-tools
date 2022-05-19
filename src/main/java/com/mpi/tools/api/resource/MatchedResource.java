@@ -1,24 +1,24 @@
 package com.mpi.tools.api.resource;
 
-import javax.servlet.http.HttpSession;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mpi.tools.api.config.UserData;
 import com.mpi.tools.api.dto.matched.PatientMatchedDTO;
 import com.mpi.tools.api.dto.matched.UserDTO;
 import com.mpi.tools.api.dto.patient.MatchedDTO;
+import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
 import com.mpi.tools.api.resource.interfaces.UserFeignClient;
+import com.mpi.tools.api.services.MatchIssueService;
 import com.mpi.tools.api.services.MatchedRecordService;
 
 @RestController
-@RequestMapping("/matched-patient")
 public class MatchedResource {
 
 	@Autowired
@@ -34,9 +34,7 @@ public class MatchedResource {
 	private UserData userData;
 
 	@Autowired
-	private HttpSession httpSession;
-
-	private final String TOKEN = "TOKEN";
+	private MatchIssueService matchIssueService;
 
 	@GetMapping
 	public ResponseEntity<?> findAllMatched(UserDTO user) {
@@ -50,7 +48,6 @@ public class MatchedResource {
 
 	}
 
-	@GetMapping("/cruid")
 	public ResponseEntity<?> findPatientByCruid() {
 
 		PatientMatchedDTO patientMatched = this.matchedPatientFeignClient
@@ -60,17 +57,26 @@ public class MatchedResource {
 
 	}
 
-	@PostMapping("/authenticate")
 	public ResponseEntity<?> authenticateUser() {
 
 		// userData = new UserData();
 		UserDTO dto = this.userFeignClient.authenticateUser(userData.getMpiUser(), userData.getPassword());
 		System.out.println("userdata " + userData.getPassword().toString() + " - " + userData.getMpiUser());
 
-		// httpSession.setAttribute(TOKEN, dto.getToken());
-
 		System.out.print("PRINT USER SESSIONS " + dto.getToken());
 		return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.noContent().build();
+
+	}
+
+	//@Scheduled(initialDelay = 1000, fixedRate = 10000)
+	public ResponseEntity<?> resolveUnapliedMatch() {
+
+		UserDTO user = (UserDTO) this.authenticateUser().getBody();
+
+		List<MatchIssue> unapliedMatchInfos = this.matchIssueService.findByProcessed(Boolean.FALSE);
+
+		this.matchedRecordService.saveUnapliedMatchInfo(unapliedMatchInfos, user);
+		return unapliedMatchInfos != null ? ResponseEntity.ok(unapliedMatchInfos) : ResponseEntity.noContent().build();
 
 	}
 

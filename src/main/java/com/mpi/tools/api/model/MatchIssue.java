@@ -39,6 +39,9 @@ public class MatchIssue {
 	private String gender;
 	private String birthDate;
 
+	@Column(name = "is_processed")
+	private boolean isProcessed;
+
 	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<MatchedRecord> matchedRecords = new ArrayList<>();
 
@@ -124,6 +127,14 @@ public class MatchIssue {
 
 	public void setBirthDate(String birthDate) {
 		this.birthDate = birthDate;
+	}
+
+	public boolean isProcessed() {
+		return isProcessed;
+	}
+
+	public void setProcessed(boolean isProcessed) {
+		this.isProcessed = isProcessed;
 	}
 
 }

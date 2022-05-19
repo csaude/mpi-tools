@@ -32,13 +32,12 @@ public class MpiToolsApiApplication {
 			// First Login
 			@SuppressWarnings("unchecked")
 			ResponseEntity<UserDTO> user = (ResponseEntity<UserDTO>) matchedResource.authenticateUser();
-
 			matchedResource.findAllMatched(user.getBody());
 
 			// Resolver inconsistencias
 			matchedResource.resolveUnapliedMatch();
-
 			System.out.println("Done Finding Match Patient");
+
 
 		};
 	}

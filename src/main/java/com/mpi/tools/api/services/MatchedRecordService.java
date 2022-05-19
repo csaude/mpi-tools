@@ -7,7 +7,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import com.mpi.tools.api.dto.matched.MatchIssueDTO;
@@ -26,7 +25,6 @@ import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
 
 import feign.FeignException.FeignClientException;
 
-@EnableAsync
 @Service
 public class MatchedRecordService {
 
@@ -142,6 +140,21 @@ public class MatchedRecordService {
 
 			matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(), user);
 
+			for (MatchIssueDTO matched : matchIssueDTOs) {
+
+				logger.info("Matched Patient link - " + matched.getNid_tarv());
+				logger.info("Matched patient id - " + patient.getResource().getId());
+
+				if (this.hasUuid(matchIssue, matched)) {
+					continue;
+				}
+				MatchedRecord matchedRecord = this.createMatchRecord(matched);
+				matchedRecord.setMatchIssue(matchIssue);
+
+				matchIssue.addMatcheRecords(matchedRecord);
+
+			}
+
 		} catch (Exception e) {
 
 			// Create here unplied mathc patients
@@ -150,21 +163,6 @@ public class MatchedRecordService {
 			logger.info(
 					"Mathced patient with id equal to " + matchIssue.getOpenCrCruid() + " not aplied successfully.");
 			e.printStackTrace();
-
-		}
-
-		for (MatchIssueDTO matched : matchIssueDTOs) {
-
-			logger.info("Matched Patient link - " + matched.getNid_tarv());
-			logger.info("Matched patient id - " + patient.getResource().getId());
-
-			if (this.hasUuid(matchIssue, matched)) {
-				continue;
-			}
-			MatchedRecord matchedRecord = this.createMatchRecord(matched);
-			matchedRecord.setMatchIssue(matchIssue);
-
-			matchIssue.addMatcheRecords(matchedRecord);
 
 		}
 
@@ -281,6 +279,22 @@ public class MatchedRecordService {
 
 				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid().toString(), user);
 
+				for (MatchIssueDTO matched : matchIssueDTOs) {
+
+					if (this.hasUuid(unapliedMatchInfo, matched)) {
+						continue;
+					}
+
+					logger.info("Matched Patient link - " + matched.getNid_tarv());
+					logger.info("Matched patient id - " + unapliedMatchInfo.getOpenCrCruid());
+
+					MatchedRecord matchedRecord = this.createMatchRecord(matched);
+					matchedRecord.setMatchIssue(unapliedMatchInfo);
+
+					unapliedMatchInfo.addMatcheRecords(matchedRecord);
+
+				}
+
 			} catch (Exception e) {
 
 				// Create here unplied mathc patients
@@ -289,18 +303,6 @@ public class MatchedRecordService {
 						+ " not aplied successfully.");
 				hasError = Boolean.TRUE;
 				e.printStackTrace();
-
-			}
-
-			for (MatchIssueDTO matched : matchIssueDTOs) {
-
-				logger.info("Matched Patient link - " + matched.getNid_tarv());
-				logger.info("Matched patient id - " + unapliedMatchInfo.getOpenCrCruid());
-
-				MatchedRecord matchedRecord = this.createMatchRecord(matched);
-				matchedRecord.setMatchIssue(unapliedMatchInfo);
-
-				unapliedMatchInfo.addMatcheRecords(matchedRecord);
 
 			}
 

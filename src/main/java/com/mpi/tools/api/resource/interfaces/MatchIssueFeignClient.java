@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import com.mpi.tools.api.config.FeignClientConfig;
 import com.mpi.tools.api.dto.matched.MatchIssueDTO;
 
-@FeignClient(name = "matchedIssueFeignClient", configuration = FeignClientConfig.class, url = "https://160.242.33.26:53000/ocrux")
+@FeignClient(name = "matchedIssueFeignClient", configuration = FeignClientConfig.class, url = "${mpi.ocrux.host}/ocrux")
 public interface MatchIssueFeignClient {
 
 	@GetMapping("/match/potential-matches/{id}")

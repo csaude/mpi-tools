@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.mpi.tools.api.config.FeignClientConfig;
 import com.mpi.tools.api.dto.matched.UserDTO;
 
-@FeignClient(name = "userAuthenticationFeignClient", configuration = FeignClientConfig.class, url = "https://160.242.33.26:53000/ocrux")
+@FeignClient(name = "userAuthenticationFeignClient", configuration = FeignClientConfig.class, url = "${mpi.ocrux.host}/ocrux")
 public interface UserFeignClient {
 
 	@PostMapping("/user/authenticate")

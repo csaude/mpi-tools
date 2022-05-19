@@ -68,14 +68,15 @@ public class MatchedResource {
 
 	}
 
-	//@Scheduled(initialDelay = 1000, fixedRate = 10000)
+	@Scheduled(initialDelay = 50000, fixedRate = 50000)
 	public ResponseEntity<?> resolveUnapliedMatch() {
 
-		UserDTO user = (UserDTO) this.authenticateUser().getBody();
+		@SuppressWarnings("unchecked")
+		ResponseEntity<UserDTO> user = (ResponseEntity<UserDTO>) this.authenticateUser();
 
 		List<MatchIssue> unapliedMatchInfos = this.matchIssueService.findByProcessed(Boolean.FALSE);
 
-		this.matchedRecordService.saveUnapliedMatchInfo(unapliedMatchInfos, user);
+		this.matchedRecordService.saveUnapliedMatchInfo(unapliedMatchInfos, user.getBody());
 		return unapliedMatchInfos != null ? ResponseEntity.ok(unapliedMatchInfos) : ResponseEntity.noContent().build();
 
 	}

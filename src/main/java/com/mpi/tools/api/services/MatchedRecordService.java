@@ -2,7 +2,6 @@ package com.mpi.tools.api.services;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -27,6 +26,7 @@ import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
 
 import feign.FeignException.FeignClientException;
 
+@EnableAsync
 @Service
 public class MatchedRecordService {
 
@@ -274,13 +274,12 @@ public class MatchedRecordService {
 
 		for (MatchIssue unapliedMatchInfo : unapliedMatchInfos) {
 			boolean hasError = Boolean.FALSE;
-			count++;
 			// sett Matched Patients
 			List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
 
 			try {
 
-				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid(), user);
+				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid().toString(), user);
 
 			} catch (Exception e) {
 

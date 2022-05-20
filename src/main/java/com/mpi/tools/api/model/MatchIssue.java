@@ -42,7 +42,7 @@ public class MatchIssue {
 	@Column(name = "is_processed")
 	private boolean isProcessed;
 
-	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<MatchedRecord> matchedRecords = new ArrayList<>();
 
 	public void addMatcheRecords(MatchedRecord matched) {

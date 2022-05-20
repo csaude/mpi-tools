@@ -68,7 +68,7 @@ public class MatchedResource {
 
 	}
 
-	@Scheduled(initialDelay = 50000, fixedRate = 50000)
+	@Scheduled(initialDelay = 3600000, fixedRate = 3600000)
 	public ResponseEntity<?> resolveUnapliedMatch() {
 
 		@SuppressWarnings("unchecked")

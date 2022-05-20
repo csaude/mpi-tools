@@ -60,6 +60,8 @@ public class MatchedRecordService {
 
 		logger.info("User LOggado " + user.getUsername());
 
+		logger.info("============================= Apply Match Patient=========================================");
+
 		for (PatientDTO patient : matchList.getEntry()) {
 			this.createMatchedIssue(patient, user);
 		}
@@ -82,6 +84,8 @@ public class MatchedRecordService {
 				}
 			}
 		}
+
+		logger.info("============================= Apply Match Patient=========================================");
 
 		return "done";
 	}
@@ -161,7 +165,7 @@ public class MatchedRecordService {
 			// this.createUnapliedMatch(matchIssue);
 			matchIssue.setProcessed(Boolean.FALSE);
 			logger.info(
-					"Mathced patient with id equal to " + matchIssue.getOpenCrCruid() + " not aplied successfully.");
+					"Mathced patient with id equal to " + matchIssue.getOpenCrCruid() + " not applied successfully.");
 			e.printStackTrace();
 
 		}
@@ -268,6 +272,8 @@ public class MatchedRecordService {
 
 	public void saveUnapliedMatchInfo(List<MatchIssue> unapliedMatchInfos, UserDTO user) {
 
+		logger.info("============================= Unplied Match =========================================");
+
 		int count = 0;
 
 		for (MatchIssue unapliedMatchInfo : unapliedMatchInfos) {
@@ -298,9 +304,8 @@ public class MatchedRecordService {
 			} catch (Exception e) {
 
 				// Create here unplied mathc patients
-				// this.createUnapliedMatch(matchIssue);
 				logger.info("Mathced patient with id equal to " + unapliedMatchInfo.getOpenCrCruid()
-						+ " not aplied successfully.");
+						+ " not applied successfully.");
 				hasError = Boolean.TRUE;
 				e.printStackTrace();
 
@@ -312,6 +317,8 @@ public class MatchedRecordService {
 			}
 
 		}
+
+		logger.info("============================= Unplied Match =========================================");
 
 	}
 }

@@ -82,7 +82,9 @@ public class MatchedRecordService {
 					String nextURI = nextPage.getUrl().split("getpages=")[1].toString();
 
 					String actualCount = nextPage.getUrl().split("_count=")[1].toString();
-					currentPage = actualCount;
+					String countCount = actualCount.split("&")[0];
+					currentPage = countCount;
+					System.out.println(" current page " + currentPage);
 
 					try {
 						// Resolver o bug
@@ -111,7 +113,9 @@ public class MatchedRecordService {
 
 					String actualCount = nextPage.getUrl().split("_count=")[1].toString();
 
-					return actualCount;
+					String countCount = actualCount.split("&")[0];
+
+					return countCount;
 				}
 			}
 		}
@@ -359,7 +363,7 @@ public class MatchedRecordService {
 	public void closeLoadPage(MatchConfig config) {
 
 		config.setActive(Boolean.FALSE);
-		config.setLastPage("yes");
+		config.setLastPage(String.valueOf(0));
 
 		this.matchConfig.updateConfig(config);
 

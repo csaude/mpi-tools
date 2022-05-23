@@ -12,6 +12,7 @@ import com.mpi.tools.api.config.UserData;
 import com.mpi.tools.api.dto.matched.PatientMatchedDTO;
 import com.mpi.tools.api.dto.matched.UserDTO;
 import com.mpi.tools.api.dto.patient.MatchedDTO;
+import com.mpi.tools.api.model.MatchConfig;
 import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
 import com.mpi.tools.api.resource.interfaces.UserFeignClient;
@@ -39,12 +40,18 @@ public class MatchedResource {
 	@GetMapping
 	public ResponseEntity<?> findAllMatched(UserDTO user) {
 
-		MatchedDTO matches = this.matchedPatientFeignClient.getAllMatched();
+		MatchConfig config = this.matchedRecordService.openLoadPage();
 
-		this.matchedRecordService.SaveMatchedInfo(matches, user);
+		if (config != null && config.isActive()) {
+			MatchedDTO matches = this.matchedPatientFeignClient.getAllMatched();
+
+			this.matchedRecordService.SaveMatchedInfo(matches, user, config);
+		}
+
+		this.matchedRecordService.closeLoadPage(config);
 
 		// Teste
-		return matches != null ? ResponseEntity.ok("Patient Match created") : ResponseEntity.noContent().build();
+		return ResponseEntity.ok("Patient Match created");
 
 	}
 

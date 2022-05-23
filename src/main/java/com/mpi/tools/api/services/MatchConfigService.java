@@ -1,7 +1,5 @@
 package com.mpi.tools.api.services;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,15 +19,20 @@ public class MatchConfigService {
 		return config;
 	}
 
-	public List<MatchConfig> findMatchConfig(String matchConfig) {
+	public MatchConfig findMatchConfig(String matchConfig) {
 
-		List<MatchConfig> config = matchConfigRepository.findByType(matchConfig);
+		MatchConfig config = matchConfigRepository.findByType(matchConfig);
 
 		return config;
 	}
 
 	public void deleteMatchConfig() {
 		this.matchConfigRepository.deleteAll();
+	}
+
+	public void updateConfig(MatchConfig load) {
+
+		this.matchConfigRepository.save(load);
 	}
 
 }

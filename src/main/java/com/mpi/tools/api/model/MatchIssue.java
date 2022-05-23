@@ -15,6 +15,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Table(name = "mpi_match_issue")
 public class MatchIssue {
@@ -42,6 +44,7 @@ public class MatchIssue {
 	@Column(name = "is_processed")
 	private boolean isProcessed;
 
+	@JsonBackReference
 	@OneToMany(mappedBy = "matchIssue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<MatchedRecord> matchedRecords = new ArrayList<>();
 

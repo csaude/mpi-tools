@@ -54,16 +54,25 @@ public class MatchedRecordService {
 
 	private final String FEMALE_CONVERTED = "F";
 
+	private final String LOAD = "LOAD";
+
 	public final Log logger = LogFactory.getLog(getClass());
 
-	public String SaveMatchedInfo(MatchedDTO matchList, UserDTO user) {
-
-		logger.info("User LOggado " + user.getUsername());
+	public String SaveMatchedInfo(MatchedDTO matchList, UserDTO user, MatchConfig config) {
 
 		logger.info("============================= Apply Match Patient=========================================");
 
-		for (PatientDTO patient : matchList.getEntry()) {
-			this.createMatchedIssue(patient, user);
+		String currentPage = "";
+
+		if (config.getLastPage().equals("NO")
+				|| (Integer.valueOf(config.getLastPage()) <= Integer.valueOf(this.getCustomNextPage(matchList)))) {
+
+			for (PatientDTO patient : matchList.getEntry()) {
+
+				this.createMatchedIssue(patient, user);
+
+			}
+
 		}
 
 		// Chamar o nextPage caso exista de forma recursiva
@@ -72,12 +81,17 @@ public class MatchedRecordService {
 				if (!nextPage.getUrl().isEmpty()) {
 					String nextURI = nextPage.getUrl().split("getpages=")[1].toString();
 
+					String actualCount = nextPage.getUrl().split("_count=")[1].toString();
+					currentPage = actualCount;
+
 					try {
 						// Resolver o bug
 						MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
-						this.SaveMatchedInfo(nextPageMatch, user);
+						this.SaveMatchedInfo(nextPageMatch, user, config);
+						config.setLastPage(String.valueOf(0));
 					} catch (FeignClientException e) {
-						// this.saveNextPage(nextPage.getUrl());
+						config.setLastPage(currentPage);
+						this.saveNextPage(config);
 						e.printStackTrace();
 					}
 
@@ -90,21 +104,23 @@ public class MatchedRecordService {
 		return "done";
 	}
 
-	private void deleteMatchConfig() {
+	private String getCustomNextPage(MatchedDTO matchList) {
+		for (LinkDTO nextPage : matchList.getLink()) {
+			if (nextPage.getRelation().equals("next")) {
+				if (!nextPage.getUrl().isEmpty()) {
 
-		this.matchConfig.deleteMatchConfig();
+					String actualCount = nextPage.getUrl().split("_count=")[1].toString();
+
+					return actualCount;
+				}
+			}
+		}
+		return null;
 	}
 
-	private void saveNextPage(String lastPage) {
+	private void saveNextPage(MatchConfig config) {
 
-		MatchConfig config = new MatchConfig();
-
-		config.setType(MATCH);
-		config.setActive(Boolean.TRUE);
-		config.setLastPage(lastPage);
-		config.setDateCreated(new Date());
-
-		this.matchConfig.createMatchConfig(config);
+		this.matchConfig.updateConfig(config);
 
 	}
 
@@ -123,7 +139,7 @@ public class MatchedRecordService {
 		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setDateCreated(new Date());
 		matchIssue.setGender(this.convertGender(patient.getResource().getGender()));
-		matchIssue.setProcessed(Boolean.TRUE);
+		matchIssue.setProcessed(Boolean.FALSE);
 
 		if (!patient.getResource().getName().isEmpty()) {
 			if (!patient.getResource().getName().get(0).getGiven().isEmpty()) {
@@ -138,38 +154,38 @@ public class MatchedRecordService {
 		// sett Matched Patients
 		matchIssue.setBirthDate(patient.getResource().getBirthDate());
 
-		List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+		// List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+		/*
+		 * // DO IT LETTER try {
+		 * 
+		 * matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(),
+		 * user);
+		 * 
+		 * for (MatchIssueDTO matched : matchIssueDTOs) {
+		 * 
+		 * logger.info("Matched Patient link - " + matched.getNid_tarv());
+		 * logger.info("Matched patient id - " + patient.getResource().getId());
+		 * 
+		 * if (this.hasUuid(matchIssue, matched)) { continue; } MatchedRecord
+		 * matchedRecord = this.createMatchRecord(matched);
+		 * matchedRecord.setMatchIssue(matchIssue);
+		 * 
+		 * matchIssue.addMatcheRecords(matchedRecord);
+		 * 
+		 * }
+		 * 
+		 * } catch (Exception e) {
+		 * 
+		 * // Create here unplied mathc patients //
+		 * this.createUnapliedMatch(matchIssue); matchIssue.setProcessed(Boolean.FALSE);
+		 * logger.info( "Mathced patient with id equal to " +
+		 * matchIssue.getOpenCrCruid() + " not applied successfully.");
+		 * e.printStackTrace();
+		 * 
+		 * }
+		 */
 
-		try {
-
-			matchIssueDTOs = this.getMatchedPatients(patient.getResource().getId(), user);
-
-			for (MatchIssueDTO matched : matchIssueDTOs) {
-
-				logger.info("Matched Patient link - " + matched.getNid_tarv());
-				logger.info("Matched patient id - " + patient.getResource().getId());
-
-				if (this.hasUuid(matchIssue, matched)) {
-					continue;
-				}
-				MatchedRecord matchedRecord = this.createMatchRecord(matched);
-				matchedRecord.setMatchIssue(matchIssue);
-
-				matchIssue.addMatcheRecords(matchedRecord);
-
-			}
-
-		} catch (Exception e) {
-
-			// Create here unplied mathc patients
-			// this.createUnapliedMatch(matchIssue);
-			matchIssue.setProcessed(Boolean.FALSE);
-			logger.info(
-					"Mathced patient with id equal to " + matchIssue.getOpenCrCruid() + " not applied successfully.");
-			e.printStackTrace();
-
-		}
-
+		// DOT IT LETTER
 		this.matchIssueService.save(matchIssue);
 
 	}
@@ -274,8 +290,6 @@ public class MatchedRecordService {
 
 		logger.info("============================= Unplied Match =========================================");
 
-		int count = 0;
-
 		for (MatchIssue unapliedMatchInfo : unapliedMatchInfos) {
 			boolean hasError = Boolean.FALSE;
 			// sett Matched Patients
@@ -312,6 +326,7 @@ public class MatchedRecordService {
 			}
 
 			if (!hasError) {
+				unapliedMatchInfo.setProcessed(Boolean.TRUE);
 				this.matchIssueService.save(unapliedMatchInfo);
 
 			}
@@ -319,6 +334,34 @@ public class MatchedRecordService {
 		}
 
 		logger.info("============================= Unplied Match =========================================");
+
+	}
+
+	public MatchConfig openLoadPage() {
+
+		MatchConfig load = this.matchConfig.findMatchConfig(LOAD);
+
+		if (load == null) {
+			MatchConfig config = new MatchConfig();
+
+			config.setType(LOAD);
+			config.setActive(Boolean.TRUE);
+			config.setLastPage("NO");
+			config.setDateCreated(new Date());
+
+			this.matchConfig.createMatchConfig(config);
+			return config;
+		}
+
+		return load;
+	}
+
+	public void closeLoadPage(MatchConfig config) {
+
+		config.setActive(Boolean.FALSE);
+		config.setLastPage("yes");
+
+		this.matchConfig.updateConfig(config);
 
 	}
 }

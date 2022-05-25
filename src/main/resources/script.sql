@@ -1,3 +1,4 @@
+
 create table mpi_match_issue (	id bigint(20) NOT NULL AUTO_INCREMENT, 
 								date_created datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 								opencr_cruid varchar(36) NOT NULL,
@@ -7,7 +8,7 @@ create table mpi_match_issue (	id bigint(20) NOT NULL AUTO_INCREMENT,
 								tarv_nid  varchar(250) NULL,
 								gender varchar(15) NOT NULL,
 								birth_date varchar(20),
-								is_processed TINYINT(1),
+								status VARCHAR(50),
 								PRIMARY KEY (id),
 								UNIQUE KEY `unq_match_issue_opencr_cruid` (`opencr_cruid`)
 							) ENGINE=InnoDB DEFAULT CHARSET=utf8;

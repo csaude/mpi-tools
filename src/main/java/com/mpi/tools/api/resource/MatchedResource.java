@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -75,13 +74,13 @@ public class MatchedResource {
 
 	}
 
-	@Scheduled(initialDelay = 3600000, fixedRate = 3600000)
+	//@Scheduled(initialDelay = 3600000, fixedRate = 3600000)
 	public ResponseEntity<?> resolveUnapliedMatch() {
 
 		@SuppressWarnings("unchecked")
 		ResponseEntity<UserDTO> user = (ResponseEntity<UserDTO>) this.authenticateUser();
 
-		List<MatchIssue> unapliedMatchInfos = this.matchIssueService.findByProcessed(Boolean.FALSE);
+		List<MatchIssue> unapliedMatchInfos = this.matchIssueService.findAllNotProcessedWithNoEmptyName();
 
 		this.matchedRecordService.saveUnapliedMatchInfo(unapliedMatchInfos, user.getBody());
 		return unapliedMatchInfos != null ? ResponseEntity.ok(unapliedMatchInfos) : ResponseEntity.noContent().build();

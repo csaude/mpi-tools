@@ -120,5 +120,14 @@ public class MatchedRecord {
 	public void setOpenmrsUuid(String openmrsUuid) {
 		this.openmrsUuid = openmrsUuid;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null || !(obj instanceof MatchedRecord)) return false;
+		
+		MatchedRecord toCompare = (MatchedRecord)obj;
+		
+		return this.getOpenmrsUuid().equals(toCompare.getOpenmrsUuid());
+	}
 
 }

@@ -1,4 +1,4 @@
-package com.mpi.tools.api.dto.patient;
+package com.mpi.tools.api.dto.matched.patient;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

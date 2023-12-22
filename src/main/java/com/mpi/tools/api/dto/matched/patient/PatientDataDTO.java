@@ -1,4 +1,4 @@
-package com.mpi.tools.api.dto.patient;
+package com.mpi.tools.api.dto.matched.patient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ResourceDTO {
+public class PatientDataDTO {
 
 	private String id;
 

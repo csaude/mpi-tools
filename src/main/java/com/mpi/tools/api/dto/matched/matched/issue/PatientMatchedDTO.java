@@ -1,12 +1,12 @@
-package com.mpi.tools.api.dto.matched;
+package com.mpi.tools.api.dto.matched.matched.issue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.mpi.tools.api.dto.patient.LinkDTO;
-import com.mpi.tools.api.dto.patient.PatientDTO;
+import com.mpi.tools.api.dto.matched.patient.LinkDTO;
+import com.mpi.tools.api.dto.matched.patient.PatientHeaderDTO;
 
 /**
  * 
@@ -16,7 +16,7 @@ import com.mpi.tools.api.dto.patient.PatientDTO;
 public class PatientMatchedDTO {
 
     @JsonProperty("entry")
-	private List<PatientDTO> entry = new ArrayList<PatientDTO>();
+	private List<PatientHeaderDTO> entry = new ArrayList<PatientHeaderDTO>();
 
 	private String id;
 
@@ -24,11 +24,11 @@ public class PatientMatchedDTO {
 
 	private List<LinkDTO> link;
 
-	public List<PatientDTO> getEntry() {
+	public List<PatientHeaderDTO> getEntry() {
 		return entry;
 	}
 
-	public void setEntry(List<PatientDTO> entry) {
+	public void setEntry(List<PatientHeaderDTO> entry) {
 		this.entry = entry;
 	}
 

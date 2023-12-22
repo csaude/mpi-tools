@@ -28,12 +28,18 @@ public class MatchIssueService {
 
 	}
 
-	public List<MatchIssue> findAllNotProcessedWithNoEmptyName() {
-		return this.matchIssueRepository.findAllNotProcessedWithNoEmptyName();
+	public List<MatchIssue> findFirstN_NotProcessedWithNoEmptyName(int n) {
+		return this.matchIssueRepository.findFirstN_NotProcessedWithNoEmptyName(n);
 	}
 
 	public List<MatchIssue> getByMatchedRecordOpenmrsUuid(String openmrsUuid) {
 		List<MatchIssue> issueOnDB =  this.matchIssueRepository.getByMatchedRecordOpenmrsUuid(openmrsUuid);
+		
+		return issueOnDB;
+	}
+	
+	public MatchIssue getByMatchedRecordMpiId(String mpiId) {
+		MatchIssue issueOnDB =  this.matchIssueRepository.getByMatchedRecordMpiId(mpiId);
 		
 		return issueOnDB;
 	}

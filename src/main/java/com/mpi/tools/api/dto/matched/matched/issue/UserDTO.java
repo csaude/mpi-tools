@@ -1,4 +1,4 @@
-package com.mpi.tools.api.dto.matched;
+package com.mpi.tools.api.dto.matched.matched.issue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

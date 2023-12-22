@@ -10,21 +10,18 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.mpi.tools.api.dto.matched.MatchIssueDTO;
-import com.mpi.tools.api.dto.matched.UserDTO;
-import com.mpi.tools.api.dto.patient.CodeDTO;
-import com.mpi.tools.api.dto.patient.IdentifierDTO;
-import com.mpi.tools.api.dto.patient.LinkDTO;
-import com.mpi.tools.api.dto.patient.MatchedDTO;
-import com.mpi.tools.api.dto.patient.PatientDTO;
+import com.mpi.tools.api.dto.matched.Matched;
+import com.mpi.tools.api.dto.matched.patient.IdentifierDTO;
+import com.mpi.tools.api.dto.matched.patient.LinkDTO;
+import com.mpi.tools.api.dto.matched.patient.PatientHeaderDTO;
+import com.mpi.tools.api.dto.matched.santempi.MatchResource;
 import com.mpi.tools.api.model.MatchConfig;
 import com.mpi.tools.api.model.MatchIssue;
 import com.mpi.tools.api.model.MatchStatus;
 import com.mpi.tools.api.model.MatchedRecord;
 import com.mpi.tools.api.resource.interfaces.MatchIssueFeignClient;
 import com.mpi.tools.api.resource.interfaces.MatchedPatientFeignClient;
-
-import feign.FeignException.FeignClientException;
+import com.mpi.tools.api.resource.interfaces.santempi.SanteMpiMatchIssueFeignClient;
 
 @Service
 public class MatchedRecordService {
@@ -35,78 +32,38 @@ public class MatchedRecordService {
 	@Autowired
 	private MatchConfigService matchConfig;
 	
-	@Autowired
-	private MatchedPatientFeignClient matchedPatientFeignClient;
+	private final static String UUID_CODE = "http://metadata.epts.e-saude.net/dictionary/patient-uuid";
 	
-	@Autowired
-	private MatchIssueFeignClient matchIssueFeignClient;
+	private final static String NID_CODE = "http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-tarv";
 	
-	private final String UUID_CODE = "OpenMRS_PATIENT_UUID";
+	public final static String MALE = "male";
 	
-	private final String NID_CODE = "NID_TARV";
+	public final static String FEMALE = "female";
 	
-	private final String MALE = "male";
+	public final static String MALE_CONVERTED = "M";
 	
-	private final String FEMALE = "female";
+	public final static String FEMALE_CONVERTED = "F";
 	
-	private final String MALE_CONVERTED = "M";
-	
-	private final String FEMALE_CONVERTED = "F";
-	
-	private final String LOAD = "LOAD";
+	private final static String LOAD = "LOAD";
 	
 	public final Log logger = LogFactory.getLog(getClass());
 	
-	public String SaveMatchedInfo(MatchedDTO matchList, UserDTO user, MatchConfig config) {
+	public String saveMatchedInfo(Matched matchList, MatchConfig config, MatchedPatientFeignClient client,
+	        MatchIssueFeignClient matchIssueClient) {
 		
-		logger.info("============================= Apply Match Patient=========================================");
+		logger.info("============================= Generate Match Patient=========================================");
 		
-		String currentPage = "";
-		
-		if (config.getLastPage().equals("NO")
-		        || (Integer.valueOf(config.getLastPage()) <= Integer.valueOf(this.getCustomNextPage(matchList)))) {
-			
-			for (PatientDTO patient : matchList.getEntry()) {
-				
-				this.createMatchedIssue(patient, user);
-				
-			}
-			
+		for (PatientHeaderDTO patient : matchList.getEntry()) {
+			this.createMatchedIssue(patient);
 		}
-		
-		// Chamar o nextPage caso exista de forma recursiva
-		for (LinkDTO nextPage : matchList.getLink()) {
-			if (nextPage.getRelation().equals("next")) {
-				if (!nextPage.getUrl().isEmpty()) {
-					String nextURI = nextPage.getUrl().split("getpages=")[1].toString();
-					
-					String actualCount = nextPage.getUrl().split("_count=")[1].toString();
-					String countCount = actualCount.split("&")[0];
-					currentPage = countCount;
-					System.out.println(" current page " + currentPage);
-					
-					try {
-						// Resolver o bug
-						MatchedDTO nextPageMatch = this.matchedPatientFeignClient.getPatientNextPage(nextURI);
-						this.SaveMatchedInfo(nextPageMatch, user, config);
-						config.setLastPage(String.valueOf(0));
-					}
-					catch (FeignClientException e) {
-						config.setLastPage(currentPage);
-						this.saveNextPage(config);
-						e.printStackTrace();
-					}
-					
-				}
-			}
-		}
-		
-		logger.info("============================= Apply Match Patient=========================================");
+	
+		logger.info("============================= Done Generate Match Patient=========================================");
 		
 		return "done";
 	}
 	
-	private String getCustomNextPage(MatchedDTO matchList) {
+	@SuppressWarnings("unused")
+	private String getCustomNextPage(Matched matchList) {
 		for (LinkDTO nextPage : matchList.getLink()) {
 			if (nextPage.getRelation().equals("next")) {
 				if (!nextPage.getUrl().isEmpty()) {
@@ -121,26 +78,20 @@ public class MatchedRecordService {
 		}
 		return null;
 	}
-	
-	private void saveNextPage(MatchConfig config) {
-		
-		this.matchConfig.updateConfig(config);
-		
-	}
-	
+
 	// Formar os objectos
-	private void createMatchedIssue(PatientDTO patient, UserDTO user) {
+	private void createMatchedIssue(PatientHeaderDTO patient) {
 		
 		// Antes de process
 		
 		MatchIssue matchIssue = new MatchIssue();
-		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
+		matchIssue.setOpenmrsUuid(MatchedRecordService.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setOpenCrCruid(patient.getResource().getId());
 		matchIssue.setDateCreated(new Date());
 		// Sett Main match
 		matchIssue.setBirthDate(patient.getResource().getBirthDate());
-		matchIssue.setTarvNid(this.getNID(patient.getResource().getIdentifier()));
-		matchIssue.setOpenmrsUuid(this.getUUID(patient.getResource().getIdentifier()));
+		matchIssue.setTarvNid(MatchedRecordService.getNID(patient.getResource().getIdentifier()));
+		matchIssue.setOpenmrsUuid(MatchedRecordService.getUUID(patient.getResource().getIdentifier()));
 		matchIssue.setDateCreated(new Date());
 		matchIssue.setGender(this.convertGender(patient.getResource().getGender()));
 		
@@ -162,7 +113,7 @@ public class MatchedRecordService {
 		
 	}
 	
-	private boolean hasUuid(MatchIssue matchIssue, MatchIssueDTO matched) {
+	private boolean hasUuid(MatchIssue matchIssue, com.mpi.tools.api.dto.matched.matched.issue.MatchIssue matched) {
 		
 		for (MatchedRecord matchedRecord : matchIssue.getMatchedRecords()) {
 			if (matched.getUid().equals(matchedRecord.getOpenmrsUuid())) {
@@ -172,13 +123,19 @@ public class MatchedRecordService {
 		return false;
 	}
 	
-	private List<MatchIssueDTO> getMatchedPatients(String patientId, UserDTO user) {
+	private List<? extends com.mpi.tools.api.dto.matched.matched.issue.MatchIssue> getMatchedPatients(String patientId,
+	        SanteMpiMatchIssueFeignClient client) {
 		
-		List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+		List<? extends com.mpi.tools.api.dto.matched.matched.issue.MatchIssue> matchIssueDTOs = new ArrayList<>();
 		
 		logger.info("Patient id " + patientId);
 		
-		matchIssueDTOs = this.matchIssueFeignClient.getMatchedPatients(patientId, "Basic ".concat(user.getToken()));
+		//matchIssueDTOs = client.getMatchedPatients(patientId);
+		
+		MatchResource mr = client.getMatchedPatients(patientId);
+		
+		matchIssueDTOs = mr.parseToIssue(client, matchIssueService);
+		
 		logger.info("patient matche fetched");
 		
 		return matchIssueDTOs;
@@ -196,7 +153,7 @@ public class MatchedRecordService {
 		return null;
 	}
 	
-	private MatchedRecord createMatchRecord(MatchIssueDTO matchedPatient) {
+	private MatchedRecord createMatchRecord(com.mpi.tools.api.dto.matched.matched.issue.MatchIssue matchedPatient) {
 		
 		MatchedRecord matchedRecord = new MatchedRecord();
 		
@@ -214,34 +171,28 @@ public class MatchedRecordService {
 		return matchedRecord;
 	}
 	
-	private String getUUID(List<IdentifierDTO> identifiers) {
+	public static String getUUID(List<IdentifierDTO> identifiers) {
 		
 		for (IdentifierDTO identifier : identifiers) {
-			
-			for (CodeDTO code : identifier.getType().getCoding()) {
-				if (code.getCode().equals(UUID_CODE)) {
-					logger.info("coder --- " + code.getCode() + " - " + identifier.getValue());
-					return identifier.getValue();
-				}
+			if (identifier.getSystem().equals(UUID_CODE)) {
+				return identifier.getValue();
+			}
+		}
+		
+		return null;
+	}
+	
+	public static String getNID(List<IdentifierDTO> identifiers) {
+		
+		for (IdentifierDTO identifier : identifiers) {
+			if (identifier.getSystem().equals(NID_CODE)) {
+				return identifier.getValue();
 			}
 		}
 		return null;
 	}
 	
-	private String getNID(List<IdentifierDTO> identifiers) {
-		
-		for (IdentifierDTO identifier : identifiers) {
-			
-			for (CodeDTO code : identifier.getType().getCoding()) {
-				if (code.getCode().equals(NID_CODE)) {
-					return identifier.getValue();
-				}
-			}
-		}
-		return null;
-	}
-	
-	public void saveUnapliedMatchInfo(List<MatchIssue> unapliedMatchInfos, UserDTO user) {
+	public void saveUnapliedMatchInfo(List<MatchIssue> unapliedMatchInfos, SanteMpiMatchIssueFeignClient client) {
 		
 		logger.info("=========================Stating to Process Unplied Match ====================================");
 		
@@ -249,7 +200,7 @@ public class MatchedRecordService {
 		
 		for (MatchIssue unapliedMatchInfo : unapliedMatchInfos) {
 			// sett Matched Patients
-			List<MatchIssueDTO> matchIssueDTOs = new ArrayList<>();
+			List<? extends com.mpi.tools.api.dto.matched.matched.issue.MatchIssue> matchIssueDTOs = new ArrayList<>();
 			
 			try {
 				i++;
@@ -257,7 +208,7 @@ public class MatchedRecordService {
 				logger.info("Processing record [" + i + "] id: " + unapliedMatchInfo.getId() + ", uuid: "
 				        + unapliedMatchInfo.getOpenmrsUuid() + ", cruid: " + unapliedMatchInfo.getOpenCrCruid());
 				
-				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid().toString(), user);
+				matchIssueDTOs = this.getMatchedPatients(unapliedMatchInfo.getOpenCrCruid().toString(), client);
 				
 				if (matchIssueDTOs.size() == 1) {
 					logger.info("No match found for record [" + i + "] id: " + unapliedMatchInfo.getId() + ", uuid: "
@@ -265,7 +216,7 @@ public class MatchedRecordService {
 					
 					unapliedMatchInfo.setStatus(MatchStatus.NO_MATCH_FOUND);
 				} else {
-					for (MatchIssueDTO matched : matchIssueDTOs) {
+					for (com.mpi.tools.api.dto.matched.matched.issue.MatchIssue matched : matchIssueDTOs) {
 						
 						if (this.hasUuid(unapliedMatchInfo, matched)) {
 							continue;
